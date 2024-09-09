@@ -27,7 +27,7 @@ class Prompter:
         prompt += self._generate_thinking(user_input)
         prompt += self._generate_answer_operator_structure()
 
-        full_prompt = prompt + user_input
+        full_prompt = prompt + f"User query: {user_input}\n"
         logging.info(f"Generated prompt: {full_prompt}")
 
         return full_prompt
