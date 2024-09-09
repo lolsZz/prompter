@@ -44,4 +44,4 @@ Your task is to guide the development process of creating a prompter that utiliz
    - Continuously refine the prompter based on test results and user feedback.
    - Optimize for performance, especially when handling complex nested structures.
 
-Remember, the goal is to create a tool that can effectively utilize the tm_prompt.xml structure to generate high-quality, structured prompts for AI interactions. Your role is crucial in ensuring the success of this project. Good luck!
+Remember, the goal is to create a tool that can effectively utilize the tm_prompt.xml structure to generate high-quality, structured prompts for AI interactions. Your role is crucial in ensuring the success of this project.
