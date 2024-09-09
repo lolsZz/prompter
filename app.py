@@ -6,6 +6,10 @@ import xml.etree.ElementTree as ET
 import glob
 import json
 
+# Set page config
+st.set_page_config(page_title="AI Prompter Pro", page_icon="🧠", layout="wide")
+
+
 # Custom CSS to improve the look and feel
 st.markdown("""
 <style>
@@ -24,9 +28,6 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-
-# Set page config
-st.set_page_config(page_title="AI Prompter Pro", page_icon="🧠", layout="wide")
 
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
