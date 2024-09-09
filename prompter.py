@@ -1,11 +1,20 @@
 import xml.etree.ElementTree as ET
 import re
+from litellm import completion
+import os
 
 class Prompter:
     def __init__(self, xml_file):
         self.tree = ET.parse(xml_file)
         self.root = self.tree.getroot()
         self.rules = self._parse_rules()
+
+    def _call_ai(self, prompt, model="gpt-3.5-turbo"):
+        try:
+            response = completion(model=model, messages=[{"role": "user", "content": prompt}])
+            return response.choices[0].message.content
+        except Exception as e:
+            return f"Error calling AI: {str(e)}"
 
     def _parse_rules(self):
         rules = {}
@@ -21,10 +30,11 @@ class Prompter:
         prompt = ""
         prompt += self._generate_intro()
         prompt += self._generate_thinking(user_input)
-        prompt += self._generate_answer_operator(user_input)
-        prompt += self._generate_reflection()
-        prompt += self._generate_output()
-        return prompt
+        prompt += self._generate_answer_operator_structure()
+
+        ai_response = self._call_ai(prompt + user_input)
+
+        return prompt + ai_response
 
     def _generate_intro(self):
         intro = self.root.find('intro')
@@ -40,17 +50,26 @@ class Prompter:
         thinking += "</thinking>\n\n"
         return thinking
 
-    def _generate_answer_operator(self, user_input):
-        # This is a placeholder. We'll implement the complex logic later.
-        return "<answer_operator>\n[Answer operation details here]\n</answer_operator>\n\n"
+    def _generate_answer_operator_structure(self):
+        return """<answer_operator>
+    <claude_thoughts>
+        <!-- Your thought process here -->
+    </claude_thoughts>
+    <reflection>
+        <!-- Your reflection here -->
+    </reflection>
+    <output>
+        <!-- Your final output here -->
+    </output>
+</answer_operator>
 
-    def _generate_reflection(self):
-        return "<reflection>\n[Reflection on the reasoning and potential errors]\n</reflection>\n\n"
-
-    def _generate_output(self):
-        return "<output>\n[Final concise answer here]\n</output>\n"
+Now, based on the above structure and the user's input, provide a detailed response:
+"""
 
 if __name__ == "__main__":
+    # Set your API key
+    os.environ["OPENAI_API_KEY"] = "your-api-key-here"
+
     prompter = Prompter('tm_prompt.xml')
     user_input = input("Enter your query: ")
     generated_prompt = prompter.generate_prompt(user_input)
