@@ -30,7 +30,7 @@ class Prompter:
         full_prompt = prompt + user_input
         logging.info(f"Generated prompt: {full_prompt}")
 
-        return prompt + ai_response
+        return full_prompt
 
     def _generate_intro(self):
         intro = self.root.find('intro')
