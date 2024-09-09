@@ -3,6 +3,7 @@ import os
 from prompter import Prompter
 import warnings
 from litellm import completion
+import xml.etree.ElementTree as ET
 import glob
 
 # Set page config
@@ -21,7 +22,19 @@ selected_xml = st.sidebar.selectbox(
     index=xml_files.index('tm_prompt.xml') if 'tm_prompt.xml' in xml_files else 0
 )
 
+# Function to get XML file info
+def get_xml_info(xml_file):
+    tree = ET.parse(xml_file)
+    root = tree.getroot()
+    intro = root.find('intro')
+    intro_text = intro.text.strip() if intro is not None else "No introduction available."
+    rules_count = len(root.findall('.//rule'))
+    return intro_text, rules_count
+
+# Create Prompter instance and get XML info
 st.session_state.prompter = Prompter(selected_xml)
+intro_text, rules_count = get_xml_info(selected_xml)
+
 
 # Title
 st.title("AI Prompter")
@@ -59,8 +72,13 @@ if st.button("Generate AI Response"):
 
 # Add some information about the app
 st.sidebar.markdown("## About")
-st.sidebar.info(f"This app generates AI prompts based on the structure defined in {selected_xml}.")
-st.sidebar.info(f"Current XML template: {selected_xml}")
+st.sidebar.info(f"""
+    This app generates AI prompts based on the structure defined in {selected_xml}.
+
+    **Current XML template:** {selected_xml}
+    **Number of rules:** {rules_count}
+
+    **Template intro:** {intro_text[:100]}...""")
 
 # Add a footer
 st.markdown("---")
