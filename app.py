@@ -22,8 +22,8 @@ st.title("AI Prompter")
 # Sidebar for model selection
 model = st.sidebar.selectbox(
     "Choose an LLM model",
-    ("gpt-3.5-turbo", "gpt-4", "anthropic.claude-3-sonnet-20240229"),
-    index=0
+    ("bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0", "gpt-3.5-turbo", "gpt-4"),
+    index=0  # Set the default to the first option (Claude 3)
 )
 
 # User input
