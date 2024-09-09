@@ -95,11 +95,12 @@ with st.expander("Template Preview"):
     # Download template
     col1, col2 = st.columns([3, 1])
     with col2:
+        template_name = os.path.basename(selected_xml)
         with open(selected_xml, "rb") as file:
             st.download_button(
-                label="Download Template",
+                label=f"Download {template_name}",
                 data=file,
-                file_name=os.path.basename(selected_xml),
+                file_name=template_name,
                 mime="application/xml"
             )
 
