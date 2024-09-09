@@ -6,12 +6,35 @@ from litellm import completion
 import xml.etree.ElementTree as ET
 import os
 import glob
+import shutil
 
 # Set page config
 st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
 
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
+
+# File uploader in the sidebar
+uploaded_file = st.sidebar.file_uploader("Upload a new XML prompt template", type="xml")
+
+if uploaded_file is not None:
+    # Save the uploaded file to the prompts folder
+    with open(os.path.join("prompts", uploaded_file.name), "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    st.sidebar.success(f"Uploaded {uploaded_file.name} successfully!")
+
+    # Validate the uploaded XML
+    try:
+        tree = ET.parse(os.path.join("prompts", uploaded_file.name))
+        root = tree.getroot()
+        if root.tag != "prompt_template":
+            raise ValueError("Invalid XML structure: root element should be 'prompt_template'")
+    except Exception as e:
+        st.sidebar.error(f"Error in uploaded XML: {str(e)}. File removed.")
+        os.remove(os.path.join("prompts", uploaded_file.name))
+    else:
+        st.sidebar.success("XML structure validated successfully!")
+        st.experimental_rerun()  # Rerun the app to update the file list
 
 # Get list of XML files
 xml_files = glob.glob('prompts/*.xml')
@@ -20,7 +43,7 @@ xml_files = glob.glob('prompts/*.xml')
 selected_xml = st.sidebar.selectbox(
     "Choose prompt template",
     xml_files,
-    index=xml_files.index('tm_prompt.xml') if 'tm_prompt.xml' in xml_files else 0
+    index=xml_files.index('prompts/tm_prompt.xml') if 'prompts/tm_prompt.xml' in xml_files else 0
 )
 
 # Function to get XML file info
