@@ -4,6 +4,7 @@ from litellm import completion
 import os
 import argparse
 
+
 class Prompter:
     def __init__(self, xml_file):
         self.tree = ET.parse(xml_file)
@@ -68,13 +69,13 @@ Now, based on the above structure and the user's input, provide a detailed respo
 """
 
 if __name__ == "__main__":
-    # Set your API key
-    os.environ["OPENAI_API_KEY"] = "your-api-key-here"
-
     # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Generate prompts using a specified LLM model.")
     parser.add_argument("--llm-model", default="gpt-3.5-turbo", help="Specify the LLM model to use")
     args = parser.parse_args()
+
+    # Set your API key
+    os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
     prompter = Prompter('tm_prompt.xml')
     user_input = input("Enter your query: ")
