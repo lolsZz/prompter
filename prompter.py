@@ -1,6 +1,5 @@
 import xml.etree.ElementTree as ET
 import re
-from litellm import completion
 import os
 import argparse
 import logging
@@ -11,13 +10,6 @@ class Prompter:
         self.root = self.tree.getroot()
         self.rules = self._parse_rules()
 
-    def _call_ai(self, prompt, model):
-        try:
-            response = completion(model=model, messages=[{"role": "user", "content": prompt}])
-            return response.choices[0].message.content
-        except Exception as e:
-            logging.error(f"Error calling AI: {str(e)}")
-            return "An error occurred while generating the response. Please try again or contact support if the problem persists."
 
     def _parse_rules(self):
         rules = {}
@@ -29,7 +21,7 @@ class Prompter:
                 rules[rule_id] = rule_text
         return rules
 
-    def generate_prompt(self, user_input, model):
+    def generate_prompt(self, user_input):
         prompt = ""
         prompt += self._generate_intro()
         prompt += self._generate_thinking(user_input)
@@ -37,9 +29,6 @@ class Prompter:
 
         full_prompt = prompt + user_input
         logging.info(f"Generated prompt: {full_prompt}")
-
-        ai_response = self._call_ai(full_prompt, model)
-        logging.info(f"AI response: {ai_response}")
 
         return prompt + ai_response
 
