@@ -1,6 +1,10 @@
 import streamlit as st
 import os
 from prompter import Prompter
+import warnings
+
+# Suppress the Pydantic warning
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 # Set page config
 st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
@@ -18,11 +22,12 @@ st.title("AI Prompter")
 # Sidebar for model selection
 model = st.sidebar.selectbox(
     "Choose an LLM model",
-    ("gpt-3.5-turbo", "gpt-4", "anthropic.claude-3-sonnet-20240229")
+    ("gpt-3.5-turbo", "gpt-4", "anthropic.claude-3-sonnet-20240229"),
+    index=0
 )
 
 # User input
-user_input = st.text_area("Enter your query:", height=100)
+user_input = st.text_area("Enter your query:", height=100, key="user_input")
 
 if st.button("Generate Prompt"):
     if user_input:
@@ -39,3 +44,7 @@ if st.button("Generate Prompt"):
 # Add some information about the app
 st.sidebar.markdown("## About")
 st.sidebar.info("This app generates AI prompts based on the structure defined in tm_prompt.xml.")
+
+# Add a footer
+st.markdown("---")
+st.markdown("Developed with ❤️ using Streamlit")

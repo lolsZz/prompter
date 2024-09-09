@@ -3,7 +3,7 @@ import re
 from litellm import completion
 import os
 import argparse
-
+import logging
 
 class Prompter:
     def __init__(self, xml_file):
@@ -16,7 +16,8 @@ class Prompter:
             response = completion(model=model, messages=[{"role": "user", "content": prompt}])
             return response.choices[0].message.content
         except Exception as e:
-            return f"Error calling AI: {str(e)}"
+            logging.error(f"Error calling AI: {str(e)}")
+            return "An error occurred while generating the response. Please try again or contact support if the problem persists."
 
     def _parse_rules(self):
         rules = {}
@@ -34,7 +35,11 @@ class Prompter:
         prompt += self._generate_thinking(user_input)
         prompt += self._generate_answer_operator_structure()
 
-        ai_response = self._call_ai(prompt + user_input, model)
+        full_prompt = prompt + user_input
+        logging.info(f"Generated prompt: {full_prompt}")
+
+        ai_response = self._call_ai(full_prompt, model)
+        logging.info(f"AI response: {ai_response}")
 
         return prompt + ai_response
 
@@ -73,6 +78,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate prompts using a specified LLM model.")
     parser.add_argument("--llm-model", default="gpt-3.5-turbo", help="Specify the LLM model to use")
     args = parser.parse_args()
+
+    # Set up logging
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # Set your API key
     os.environ["OPENAI_API_KEY"] = "your-api-key-here"
