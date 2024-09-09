@@ -4,6 +4,7 @@ from prompter import Prompter
 import warnings
 from litellm import completion
 import xml.etree.ElementTree as ET
+import os
 import glob
 
 # Set page config
@@ -13,11 +14,11 @@ st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
 # Get list of XML files
-xml_files = glob.glob('*.xml')
+xml_files = glob.glob('prompts/*.xml')
 
 # Sidebar for XML template selection
 selected_xml = st.sidebar.selectbox(
-    "Choose XML template",
+    "Choose prompt template",
     xml_files,
     index=xml_files.index('tm_prompt.xml') if 'tm_prompt.xml' in xml_files else 0
 )
@@ -73,7 +74,7 @@ if st.button("Generate AI Response"):
 # Add some information about the app
 st.sidebar.markdown("## About")
 st.sidebar.info(f"""
-    This app generates AI prompts based on the structure defined in {selected_xml}.
+    This app generates AI prompts based on the structure defined in {os.path.basename(selected_xml)}.
 
     **Current XML template:** {selected_xml}
     **Number of rules:** {rules_count}

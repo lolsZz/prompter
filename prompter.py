@@ -74,7 +74,7 @@ if __name__ == "__main__":
     # Set your API key
     os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
-    prompter = Prompter('tm_prompt.xml')
+    prompter = Prompter('prompts/tm_prompt.xml')
     user_input = input("Enter your query: ")
-    generated_prompt = prompter.generate_prompt(user_input, args.llm_model)
+    generated_prompt = prompter.generate_prompt(user_input)
     print(generated_prompt)
