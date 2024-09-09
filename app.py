@@ -3,16 +3,25 @@ import os
 from prompter import Prompter
 import warnings
 from litellm import completion
+import glob
 
 # Set page config
 st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
 
-# Initialize session state
-if 'prompter' not in st.session_state:
-    st.session_state.prompter = Prompter('tm_prompt.xml')
-
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
+
+# Get list of XML files
+xml_files = glob.glob('*.xml')
+
+# Sidebar for XML template selection
+selected_xml = st.sidebar.selectbox(
+    "Choose XML template",
+    xml_files,
+    index=xml_files.index('tm_prompt.xml') if 'tm_prompt.xml' in xml_files else 0
+)
+
+st.session_state.prompter = Prompter(selected_xml)
 
 # Title
 st.title("AI Prompter")
@@ -50,7 +59,8 @@ if st.button("Generate AI Response"):
 
 # Add some information about the app
 st.sidebar.markdown("## About")
-st.sidebar.info("This app generates AI prompts based on the structure defined in tm_prompt.xml.")
+st.sidebar.info(f"This app generates AI prompts based on the structure defined in {selected_xml}.")
+st.sidebar.info(f"Current XML template: {selected_xml}")
 
 # Add a footer
 st.markdown("---")
