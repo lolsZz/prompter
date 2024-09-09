@@ -1,6 +1,6 @@
 # prompter: Advanced AI Prompt Engineering Application
 
-prompter is an innovative application that leverages sophisticated prompting techniques to enable users to craft advanced, context-aware prompts for AI interactions. Inspired by the [SuperPrompt project](https://github.com/NeoVertex1/SuperPrompt) and building upon the structure and logic of tm_prompt_improved.xml, prompter aims to revolutionize the way we interact with AI models.
+prompter is an innovative application that leverages sophisticated prompting techniques to enable users to craft advanced, context-aware prompts for AI interactions. Inspired by the [SuperPrompt project](https://github.com/NeoVertex1/SuperPrompt) and building upon the structure and logic of tm_prompt.xml, prompter aims to revolutionize the way we interact with AI models.
 
 ## Features
 
