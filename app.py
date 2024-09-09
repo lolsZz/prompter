@@ -1,41 +1,61 @@
 import streamlit as st
 import os
 from prompter import Prompter
-import warnings
 from litellm import completion
 import xml.etree.ElementTree as ET
-import os
 import glob
-import shutil
-import tempfile
-import base64
+import json
+
+# Custom CSS to improve the look and feel
+st.markdown("""
+<style>
+    .stApp {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .st-emotion-cache-16idsys p {
+        font-size: 18px;
+    }
+    .custom-box {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Set page config
-st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
+st.set_page_config(page_title="AI Prompter Pro", page_icon="🧠", layout="wide")
 
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
+
+# Initialize session state
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
 
 # Function to get list of XML files
 def get_xml_files():
     return glob.glob('prompts/*.xml')
 
 # Sidebar for template selection and management
-st.sidebar.header("Prompt Template")
+st.sidebar.title("🧠 AI Prompter Pro")
+st.sidebar.header("🔧 Configuration")
 
 # Template selection
 xml_files = get_xml_files()
-selected_xml = st.sidebar.selectbox(
-    "Select a template",
+selected_xml = st.sidebar.radio(
+    "📄 Select a template",
     xml_files,
     index=xml_files.index('prompts/tm_prompt.xml') if 'prompts/tm_prompt.xml' in xml_files else 0,
     format_func=lambda x: os.path.basename(x)
 )
 
 # Template management expander
-with st.sidebar.expander("Manage Templates"):
+with st.sidebar.expander("🔄 Manage Templates"):
     # File uploader
-    uploaded_file = st.file_uploader("Upload new template", type="xml", key="uploader")
+    uploaded_file = st.file_uploader("📤 Upload new template", type="xml", key="uploader")
 
     if uploaded_file:
         # Save the uploaded file to the prompts folder
@@ -63,7 +83,7 @@ with st.sidebar.expander("Manage Templates"):
         key="remove_template"
     )
 
-    if st.button("Remove Selected Template"):
+    if st.button("🗑️ Remove Selected Template"):
         if template_to_remove:
             file_to_remove = os.path.join("prompts", template_to_remove)
             if os.path.exists(file_to_remove):
@@ -86,8 +106,8 @@ def get_xml_info(xml_file):
 st.session_state.prompter = Prompter(selected_xml)
 intro_text, rules_count = get_xml_info(selected_xml)
 
-# Template preview and download in main container
-with st.expander("Template Preview"):
+# Template preview and download in sidebar
+with st.sidebar.expander("👁️ Template Preview"):
     with open(selected_xml, 'r') as file:
         template_content = file.read()
         st.code(template_content, language="xml")
@@ -104,41 +124,80 @@ with st.expander("Template Preview"):
                 mime="application/xml"
             )
 
-st.markdown("---")
-
-# Title
-st.title("AI Prompter")
-
 # Sidebar for model selection
-model = st.sidebar.selectbox(
-    "Choose an LLM model",
+model = st.sidebar.radio(
+    "🤖 Choose an LLM model",
     ("bedrock/anthropic.claude-3-5-sonnet-20240620-v1:0", "gpt-3.5-turbo", "gpt-4"),
     index=0  # Set the default to the first option (Claude 3)
 )
 
-# User input
-user_input = st.text_area("Enter your query:", height=100, key="user_input")
+# Main content area
+st.title("🧠 AI Prompter Pro")
 
-if st.button("Generate Prompt"):
-    if user_input:
-        with st.spinner("Generating prompt..."):
-            generated_prompt = st.session_state.prompter.generate_prompt(user_input)
-
-        st.subheader("Generated Prompt:")
-        st.text_area("", value=generated_prompt, height=300)
-
-        # You can add more visualizations or analysis here
+# Display chat history
+for i, message in enumerate(st.session_state.chat_history):
+    if message['role'] == 'user':
+        st.markdown(f"**You:** {message['content']}")
     else:
-        st.warning("Please enter a query.")
+        with st.chat_message("assistant"):
+            st.markdown(f"**AI:** {message['content']}")
 
-if st.button("Generate AI Response"):
-    if user_input:
-        with st.spinner("Generating AI response..."):
-            prompt = st.session_state.prompter.generate_prompt(user_input)
-            ai_response = completion(model=model, messages=[{"role": "user", "content": prompt + user_input}])
-            st.text_area("AI Response:", value=ai_response.choices[0].message.content, height=300)
-    else:
-        st.warning("Please enter a query.")
+# User input area
+with st.container():
+    st.markdown("### 💬 Chat with AI")
+    user_input = st.text_area("Enter your message:", height=100, key="user_input")
+    col1, col2, col3 = st.columns([1,1,1])
+    with col1:
+        if st.button("🚀 Send", use_container_width=True):
+            if user_input:
+                st.session_state.chat_history.append({"role": "user", "content": user_input})
+                with st.spinner("AI is thinking..."):
+                    prompt = st.session_state.prompter.generate_prompt(user_input)
+                    ai_response = completion(model=model, messages=[{"role": "user", "content": prompt + user_input}])
+                    ai_content = ai_response.choices[0].message.content
+                    st.session_state.chat_history.append({"role": "assistant", "content": ai_content})
+                st.experimental_rerun()
+            else:
+                st.warning("Please enter a message.")
+    with col2:
+        if st.button("🔄 Reset Chat", use_container_width=True):
+            st.session_state.chat_history = []
+            st.experimental_rerun()
+    with col3:
+        if st.button("📋 Copy Last Response", use_container_width=True):
+            if st.session_state.chat_history:
+                last_response = next((msg['content'] for msg in reversed(st.session_state.chat_history) if msg['role'] == 'assistant'), None)
+                if last_response:
+                    st.write("Last response copied to clipboard!")
+                    st.write(last_response)  # This is a placeholder. In a real app, you'd use JavaScript to copy to clipboard.
+                else:
+                    st.warning("No AI response to copy.")
+            else:
+                st.warning("No chat history available.")
+
+# Advanced options
+with st.expander("🛠️ Advanced Options"):
+    st.subheader("Prompt Generation")
+    if st.button("Generate Prompt Only"):
+        if user_input:
+            with st.spinner("Generating prompt..."):
+                generated_prompt = st.session_state.prompter.generate_prompt(user_input)
+            st.text_area("Generated Prompt:", value=generated_prompt, height=200)
+        else:
+            st.warning("Please enter a message.")
+
+    st.subheader("Chat Export")
+    if st.button("Export Chat History"):
+        if st.session_state.chat_history:
+            chat_export = json.dumps(st.session_state.chat_history, indent=2)
+            st.download_button(
+                label="📥 Download Chat History",
+                data=chat_export,
+                file_name="chat_history.json",
+                mime="application/json"
+            )
+        else:
+            st.warning("No chat history to export.")
 
 # Add some information about the app
 st.sidebar.markdown("## About")
@@ -151,5 +210,5 @@ st.sidebar.info(f"""
     """)
 
 # Add a footer
-st.markdown("---")
-st.markdown("Developed with ❤️ using Streamlit")
+st.sidebar.markdown("---")
+st.sidebar.markdown("Developed with ❤️ using Streamlit")
