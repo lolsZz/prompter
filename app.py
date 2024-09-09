@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import os
 import glob
 import shutil
+import tempfile
 import base64
 
 # Set page config
@@ -15,94 +16,90 @@ st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
-# Sidebar for template management
-st.sidebar.header("Template Management")
-
-# File uploader
-uploaded_file = st.sidebar.file_uploader("Upload a new XML prompt template", type="xml", key="uploader")
-
-if uploaded_file is not None:
-    # Save the uploaded file to the prompts folder
-    with open(os.path.join("prompts", uploaded_file.name), "wb") as f:
-        f.write(uploaded_file.getbuffer())
-    st.sidebar.success(f"Uploaded {uploaded_file.name} successfully!")
-
-    # Validate the uploaded XML
-    try:
-        tree = ET.parse(os.path.join("prompts", uploaded_file.name))
-        root = tree.getroot()
-        if root.tag != "prompt_template":
-            raise ValueError("Invalid XML structure: root element should be 'prompt_template'")
-    except Exception as e:
-        st.sidebar.error(f"Error in uploaded XML: {str(e)}. File removed.")
-        os.remove(os.path.join("prompts", uploaded_file.name))
-    else:
-        st.sidebar.success("XML structure validated successfully!")
-        st.experimental_rerun()  # Rerun the app to update the file list
-
 # Function to get list of XML files
 def get_xml_files():
     return glob.glob('prompts/*.xml')
 
-# Get initial list of XML files
+# Sidebar for template selection and management
+st.sidebar.header("Prompt Template")
+
+# Template selection
 xml_files = get_xml_files()
-
-# Template removal
-template_to_remove = st.sidebar.selectbox(
-    "Select a template to remove",
-    [""] + [os.path.basename(f) for f in xml_files],
-    key="remove_template"
-)
-
-if st.sidebar.button("Remove Selected Template"):
-    if template_to_remove:
-        file_to_remove = os.path.join("prompts", template_to_remove)
-        if os.path.exists(file_to_remove):
-            os.remove(file_to_remove)
-            st.sidebar.success(f"Removed {template_to_remove}")
-            st.experimental_rerun()
-        else:
-            st.sidebar.error("File not found")
-
-# Update XML files list
-xml_files = get_xml_files()
-
-# Sidebar for XML template selection
 selected_xml = st.sidebar.selectbox(
-    "Choose prompt template",
+    "Select a template",
     xml_files,
-    index=xml_files.index('prompts/tm_prompt.xml') if 'prompts/tm_prompt.xml' in xml_files else 0
+    index=xml_files.index('prompts/tm_prompt.xml') if 'prompts/tm_prompt.xml' in xml_files else 0,
+    format_func=lambda x: os.path.basename(x)
 )
+
+# Template management expander
+with st.sidebar.expander("Manage Templates"):
+    # File uploader
+    uploaded_file = st.file_uploader("Upload new template", type="xml", key="uploader")
+
+    if uploaded_file:
+        # Save the uploaded file to the prompts folder
+        with open(os.path.join("prompts", uploaded_file.name), "wb") as f:
+            f.write(uploaded_file.getbuffer())
+        st.success(f"Uploaded {uploaded_file.name} successfully!")
+
+        # Validate the uploaded XML
+        try:
+            tree = ET.parse(os.path.join("prompts", uploaded_file.name))
+            root = tree.getroot()
+            if root.tag != "tm_prompt":
+                raise ValueError("Invalid XML structure: root element should be 'tm_prompt'")
+        except Exception as e:
+            st.error(f"Error in uploaded XML: {str(e)}. File removed.")
+            os.remove(os.path.join("prompts", uploaded_file.name))
+        else:
+            st.success("XML structure validated successfully!")
+            st.experimental_rerun()
+
+    # Template removal
+    template_to_remove = st.selectbox(
+        "Select template to remove",
+        [""] + [os.path.basename(f) for f in xml_files],
+        key="remove_template"
+    )
+
+    if st.button("Remove Selected Template"):
+        if template_to_remove:
+            file_to_remove = os.path.join("prompts", template_to_remove)
+            if os.path.exists(file_to_remove):
+                os.remove(file_to_remove)
+                st.success(f"Removed {template_to_remove}")
+                st.experimental_rerun()
+            else:
+                st.error("File not found")
+
+# Template preview and download
+with st.sidebar.expander("Template Preview"):
+    with open(selected_xml, 'r') as file:
+        template_content = file.read()
+        st.code(template_content, language="xml")
+
+    # Download template
+    with open(selected_xml, "rb") as file:
+        st.download_button(
+            label="Download Template",
+            data=file,
+            file_name=os.path.basename(selected_xml),
+            mime="application/xml"
+        )
 
 # Function to get XML file info
 def get_xml_info(xml_file):
     tree = ET.parse(xml_file)
     root = tree.getroot()
     intro = root.find('intro')
-    intro_text = intro.text.strip() if intro is not None else "No introduction available."
+    intro_text = intro.text.strip() if intro is not None and intro.text else "No introduction available."
     rules_count = len(root.findall('.//rule'))
     return intro_text, rules_count
 
 # Create Prompter instance and get XML info
 st.session_state.prompter = Prompter(selected_xml)
-
-# Display template content
-if st.sidebar.checkbox("Show Template Content"):
-    with open(selected_xml, 'r') as file:
-        template_content = file.read()
-        st.sidebar.code(template_content, language="xml")
-
-# Download template
-if st.sidebar.button("Download Selected Template"):
-    with open(selected_xml, "rb") as file:
-        btn = st.sidebar.download_button(
-            label="Click to Download",
-            data=file,
-            file_name=os.path.basename(selected_xml),
-            mime="application/xml"
-        )
 intro_text, rules_count = get_xml_info(selected_xml)
-
 
 # Title
 st.title("AI Prompter")
@@ -133,7 +130,7 @@ if st.button("Generate AI Response"):
     if user_input:
         with st.spinner("Generating AI response..."):
             prompt = st.session_state.prompter.generate_prompt(user_input)
-            ai_response = completion(model=model, messages=[{"role": "user", "content": prompt}])
+            ai_response = completion(model=model, messages=[{"role": "user", "content": prompt + user_input}])
             st.text_area("AI Response:", value=ai_response.choices[0].message.content, height=300)
     else:
         st.warning("Please enter a query.")
@@ -141,12 +138,12 @@ if st.button("Generate AI Response"):
 # Add some information about the app
 st.sidebar.markdown("## About")
 st.sidebar.info(f"""
-    This app generates AI prompts based on the structure defined in {os.path.basename(selected_xml)}.
+    **Current template:** {os.path.basename(selected_xml)}
+    **Rules count:** {rules_count}
 
-    **Current XML template:** {selected_xml}
-    **Number of rules:** {rules_count}
-
-    **Template intro:** {intro_text[:100]}...""")
+    This app generates AI prompts based on 
+    the structure defined in the selected template.
+    """)
 
 # Add a footer
 st.markdown("---")
