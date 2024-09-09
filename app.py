@@ -75,7 +75,7 @@ with st.sidebar.expander("🔄 Manage Templates"):
             os.remove(os.path.join("prompts", uploaded_file.name))
         else:
             st.success("XML structure validated successfully!")
-            st.experimental_rerun()
+            st.rerun()
 
     # Template removal
     template_to_remove = st.selectbox(
@@ -90,7 +90,7 @@ with st.sidebar.expander("🔄 Manage Templates"):
             if os.path.exists(file_to_remove):
                 os.remove(file_to_remove)
                 st.success(f"Removed {template_to_remove}")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("File not found")
 
@@ -157,13 +157,13 @@ with st.container():
                     ai_response = completion(model=model, messages=[{"role": "user", "content": prompt + user_input}])
                     ai_content = ai_response.choices[0].message.content
                     st.session_state.chat_history.append({"role": "assistant", "content": ai_content})
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.warning("Please enter a message.")
     with col2:
         if st.button("🔄 Reset Chat", use_container_width=True):
             st.session_state.chat_history = []
-            st.experimental_rerun()
+            st.rerun()
     with col3:
         if st.button("📋 Copy Last Response", use_container_width=True):
             if st.session_state.chat_history:
