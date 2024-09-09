@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import os
 import glob
 import shutil
+import base64
 
 # Set page config
 st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
@@ -14,8 +15,11 @@ st.set_page_config(page_title="AI Prompter", page_icon="🤖", layout="wide")
 # Set your API key (consider using st.secrets for better security)
 os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
-# File uploader in the sidebar
-uploaded_file = st.sidebar.file_uploader("Upload a new XML prompt template", type="xml")
+# Sidebar for template management
+st.sidebar.header("Template Management")
+
+# File uploader
+uploaded_file = st.sidebar.file_uploader("Upload a new XML prompt template", type="xml", key="uploader")
 
 if uploaded_file is not None:
     # Save the uploaded file to the prompts folder
@@ -36,8 +40,32 @@ if uploaded_file is not None:
         st.sidebar.success("XML structure validated successfully!")
         st.experimental_rerun()  # Rerun the app to update the file list
 
-# Get list of XML files
-xml_files = glob.glob('prompts/*.xml')
+# Function to get list of XML files
+def get_xml_files():
+    return glob.glob('prompts/*.xml')
+
+# Get initial list of XML files
+xml_files = get_xml_files()
+
+# Template removal
+template_to_remove = st.sidebar.selectbox(
+    "Select a template to remove",
+    [""] + [os.path.basename(f) for f in xml_files],
+    key="remove_template"
+)
+
+if st.sidebar.button("Remove Selected Template"):
+    if template_to_remove:
+        file_to_remove = os.path.join("prompts", template_to_remove)
+        if os.path.exists(file_to_remove):
+            os.remove(file_to_remove)
+            st.sidebar.success(f"Removed {template_to_remove}")
+            st.experimental_rerun()
+        else:
+            st.sidebar.error("File not found")
+
+# Update XML files list
+xml_files = get_xml_files()
 
 # Sidebar for XML template selection
 selected_xml = st.sidebar.selectbox(
@@ -57,6 +85,22 @@ def get_xml_info(xml_file):
 
 # Create Prompter instance and get XML info
 st.session_state.prompter = Prompter(selected_xml)
+
+# Display template content
+if st.sidebar.checkbox("Show Template Content"):
+    with open(selected_xml, 'r') as file:
+        template_content = file.read()
+        st.sidebar.code(template_content, language="xml")
+
+# Download template
+if st.sidebar.button("Download Selected Template"):
+    with open(selected_xml, "rb") as file:
+        btn = st.sidebar.download_button(
+            label="Click to Download",
+            data=file,
+            file_name=os.path.basename(selected_xml),
+            mime="application/xml"
+        )
 intro_text, rules_count = get_xml_info(selected_xml)
 
 
