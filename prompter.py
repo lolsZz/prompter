@@ -2,6 +2,7 @@ import xml.etree.ElementTree as ET
 import re
 from litellm import completion
 import os
+import argparse
 
 class Prompter:
     def __init__(self, xml_file):
@@ -9,7 +10,7 @@ class Prompter:
         self.root = self.tree.getroot()
         self.rules = self._parse_rules()
 
-    def _call_ai(self, prompt, model="gpt-3.5-turbo"):
+    def _call_ai(self, prompt, model):
         try:
             response = completion(model=model, messages=[{"role": "user", "content": prompt}])
             return response.choices[0].message.content
@@ -26,13 +27,13 @@ class Prompter:
                 rules[rule_id] = rule_text
         return rules
 
-    def generate_prompt(self, user_input):
+    def generate_prompt(self, user_input, model):
         prompt = ""
         prompt += self._generate_intro()
         prompt += self._generate_thinking(user_input)
         prompt += self._generate_answer_operator_structure()
 
-        ai_response = self._call_ai(prompt + user_input)
+        ai_response = self._call_ai(prompt + user_input, model)
 
         return prompt + ai_response
 
@@ -70,7 +71,12 @@ if __name__ == "__main__":
     # Set your API key
     os.environ["OPENAI_API_KEY"] = "your-api-key-here"
 
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Generate prompts using a specified LLM model.")
+    parser.add_argument("--llm-model", default="gpt-3.5-turbo", help="Specify the LLM model to use")
+    args = parser.parse_args()
+
     prompter = Prompter('tm_prompt.xml')
     user_input = input("Enter your query: ")
-    generated_prompt = prompter.generate_prompt(user_input)
+    generated_prompt = prompter.generate_prompt(user_input, args.llm_model)
     print(generated_prompt)
