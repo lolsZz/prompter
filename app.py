@@ -73,21 +73,6 @@ with st.sidebar.expander("Manage Templates"):
             else:
                 st.error("File not found")
 
-# Template preview and download
-with st.sidebar.expander("Template Preview"):
-    with open(selected_xml, 'r') as file:
-        template_content = file.read()
-        st.code(template_content, language="xml")
-
-    # Download template
-    with open(selected_xml, "rb") as file:
-        st.download_button(
-            label="Download Template",
-            data=file,
-            file_name=os.path.basename(selected_xml),
-            mime="application/xml"
-        )
-
 # Function to get XML file info
 def get_xml_info(xml_file):
     tree = ET.parse(xml_file)
@@ -100,6 +85,25 @@ def get_xml_info(xml_file):
 # Create Prompter instance and get XML info
 st.session_state.prompter = Prompter(selected_xml)
 intro_text, rules_count = get_xml_info(selected_xml)
+
+# Template preview and download in main container
+with st.expander("Template Preview"):
+    with open(selected_xml, 'r') as file:
+        template_content = file.read()
+        st.code(template_content, language="xml")
+
+    # Download template
+    col1, col2 = st.columns([3, 1])
+    with col2:
+        with open(selected_xml, "rb") as file:
+            st.download_button(
+                label="Download Template",
+                data=file,
+                file_name=os.path.basename(selected_xml),
+                mime="application/xml"
+            )
+
+st.markdown("---")
 
 # Title
 st.title("AI Prompter")
